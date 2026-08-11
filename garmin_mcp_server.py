@@ -90,6 +90,10 @@ def init_api(email, password):
     return garmin
 
 
+def get_mfa():
+    """Get MFA."""
+    return input("MFA one-time code: ")
+
 
 api = init_api(email, password)
 
@@ -173,7 +177,7 @@ def fetch_body_battery_data(start_date: str, end_date: str) -> dict:
     Returns:
         dict - body battery data
     """
-    api.get_body_battery(start_date, end_date)
+    return api.get_body_battery(start_date, end_date)
 
     
 
