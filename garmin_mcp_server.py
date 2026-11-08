@@ -1,5 +1,6 @@
 # server.py
 import datetime
+import sys
 from mcp.server.fastmcp import FastMCP
 import logging
 
@@ -21,13 +22,16 @@ from garminconnect import (
 # Load environment variables from .env file
 load_dotenv()
 
-print(f"Starting Garmin MCP server for {os.getenv('GARMIN_EMAIL')}")
+# All MCP server logs go to stderr; stdout is reserved for the JSON-RPC
+# stream that the MCP stdio client reads.
+print(f"Starting Garmin MCP server for {os.getenv('GARMIN_EMAIL')}", file=sys.stderr)
 
 # Load environment variables if defined
 email = os.getenv("GARMIN_EMAIL")
 password = os.getenv("GARMIN_PASSWORD")
 tokenstore = os.getenv("GARMIN_TOKEN_STORE") or "~/.garminconnect"
 tokenstore_base64 = os.getenv("GARMINTOKENS_BASE64") or "~/.garminconnect_base64"
+
 api = None
 
 def init_api(email, password):
@@ -36,7 +40,8 @@ def init_api(email, password):
     try:
         # Using Oauth1 and OAuth2 token files from directory
         print(
-            f"Trying to login to Garmin Connect using token data from directory '{tokenstore}'...\n"
+            f"Trying to login to Garmin Connect using token data from directory '{tokenstore}'...\n",
+            file=sys.stderr,
         )
 
         # Using Oauth1 and Oauth2 tokens from base64 encoded string
@@ -54,7 +59,8 @@ def init_api(email, password):
         # Session is expired. You'll need to log in again
         print(
             "Login tokens not present, login with your Garmin Connect credentials to generate them.\n"
-            f"They will be stored in '{tokenstore}' for future use.\n"
+            f"They will be stored in '{tokenstore}' for future use.\n",
+            file=sys.stderr,
         )
         try:
             # # Ask for credentials if not set as environment variables
@@ -68,7 +74,8 @@ def init_api(email, password):
             # Save Oauth1 and Oauth2 token files to directory for next login
             garmin.garth.dump(tokenstore)
             print(
-                f"Oauth tokens stored in '{tokenstore}' directory for future use. (first method)\n"
+                f"Oauth tokens stored in '{tokenstore}' directory for future use. (first method)\n",
+                file=sys.stderr,
             )
             # Encode Oauth1 and Oauth2 tokens to base64 string and safe to file for next login (alternative way)
             token_base64 = garmin.garth.dumps()
@@ -76,7 +83,8 @@ def init_api(email, password):
             with open(dir_path, "w") as token_file:
                 token_file.write(token_base64)
             print(
-                f"Oauth tokens encoded as base64 string and saved to '{dir_path}' file for future use. (second method)\n"
+                f"Oauth tokens encoded as base64 string and saved to '{dir_path}' file for future use. (second method)\n",
+                file=sys.stderr,
             )
         except (
             FileNotFoundError,
@@ -131,16 +139,16 @@ def fetch_activities_data(num_activities: int) -> dict:
         dict - workouts data
     """
     activities = api.get_activities(limit=num_activities)
-    
+
     # # Get last fetched workout
     # workout_id = workouts[-1]["workoutId"]
     # workout_name = workouts[-1]["workoutName"]
-    
+
     # downloaded_workouts = []
     # for i in range(num_workouts):
     #     workout_id = workouts[-(i + 1)]["workoutId"]
     #     workout_name = workouts[-(i + 1)]["workoutName"]
-        
+
     #     workout_data = api.download_workout(workout_id)
 
     #     downloaded_workouts.append(workout_data)
@@ -179,12 +187,9 @@ def fetch_body_battery_data(start_date: str, end_date: str) -> dict:
     """
     return api.get_body_battery(start_date, end_date)
 
-    
 
 # Add a dynamic greeting resource
 @mcp.resource("greeting://{name}")
 def get_greeting(name: str) -> str:
     """Get a personalized greeting"""
     return f"Hello, {name}!"
-
- 
